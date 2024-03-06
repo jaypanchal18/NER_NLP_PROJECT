@@ -77,7 +77,7 @@ def process_excel_file(file):
     return df
 
 def main():
-    st.title('Upload File')
+    st.title('Upload Transaction File')
 
     uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx', 'pdf', 'docx'])
 
