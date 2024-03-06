@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 import io
-from PyPDF2 import PdfReader
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag, ne_chunk
@@ -11,6 +10,7 @@ import matplotlib.pyplot as plt
 import base64
 import openpyxl
 import re
+import fitz  # PyMuPDF
 
 # Download NLTK resources
 nltk.download('punkt')
@@ -48,9 +48,10 @@ def extract_payment_platform(narration):
 
 def extract_text_from_pdf(pdf_file):
     text = ""
-    pdf_reader = PdfReader(pdf_file)
-    for page_num in range(len(pdf_reader.pages)):
-        text += pdf_reader.pages[page_num].extract_text()
+    pdf_document = fitz.open(pdf_file)
+    for page_num in range(len(pdf_document)):
+        page = pdf_document.load_page(page_num)
+        text += page.get_text()
     return text
 
 def extract_text_from_docx(docx_file):
@@ -65,18 +66,6 @@ def nltk_named_entity_recognition(text):
     tagged = pos_tag(tokens)
     entities = ne_chunk(tagged)
     return entities
-
-def process_pdf_file(pdf_file):
-    text = extract_text_from_pdf(pdf_file)
-    entities = nltk_named_entity_recognition(text)
-    result = text, str(entities)
-    return result
-
-def process_docx_file(docx_file):
-    text = extract_text_from_docx(docx_file)
-    entities = nltk_named_entity_recognition(text)
-    result = text, str(entities)
-    return result
 
 def process_excel_file(file):
     wb = openpyxl.load_workbook(file)
@@ -98,6 +87,7 @@ def main():
             
             if uploaded_file.type == 'text/csv':
                 df = pd.read_csv(io.StringIO(uploaded_file.read().decode('utf-8')))
+                
             elif uploaded_file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 df = process_excel_file(uploaded_file)
             
